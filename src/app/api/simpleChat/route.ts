@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { MODEL, costOf, type Usage } from '@/lib/pricing';
 
 export async function POST(req: Request) {
   const { prompt } = await req.json();
@@ -15,7 +16,7 @@ export async function POST(req: Request) {
       'anthropic-version': '2023-06-01',
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-5-5',
+      model: MODEL,
       max_tokens: 1024,
       messages: [{ role: 'user', content: prompt }],
     }),
@@ -33,5 +34,7 @@ export async function POST(req: Request) {
     .map((b: { text: string }) => b.text)
     .join('');
 
-  return NextResponse.json({ answer });
+  // usage.output_tokens includes any (hidden) thinking tokens, which are billed as output
+  const usage: Usage = data.usage;
+  return NextResponse.json({ answer, usage, cost: costOf(usage) });
 }
